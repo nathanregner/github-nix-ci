@@ -224,24 +224,24 @@ in
       in
       builtins.foldl' (a: b: lib.mkMerge [ a b ]) { } runners;
 
-    age.secrets =
-      let
-        inherit (config.services.github-nix-ci.age) secretsDir;
-        ageSecretConfigFor = name:
-          let fname = "github-nix-ci/${name}.token.age";
-          in lib.nameValuePair fname {
-            inherit (config.services.github-nix-ci.output.runner) owner;
-            file = "${secretsDir}/${fname}";
-          };
-      in
-      lib.mkIf (secretsDir != null)
-        (lib.listToAttrs
-          (forAttr config.services.github-nix-ci.orgRunners
-            (name: _: ageSecretConfigFor name)
-          ++
-          forAttr config.services.github-nix-ci.personalRunners
-            (name: cfg: ageSecretConfigFor cfg.output.user)
-          ));
+    # age.secrets =
+    #   let
+    #     inherit (config.services.github-nix-ci.age) secretsDir;
+    #     ageSecretConfigFor = name:
+    #       let fname = "github-nix-ci/${name}.token.age";
+    #       in lib.nameValuePair fname {
+    #         inherit (config.services.github-nix-ci.output.runner) owner;
+    #         file = "${secretsDir}/${fname}";
+    #       };
+    #   in
+    #   lib.mkIf (secretsDir != null)
+    #     (lib.listToAttrs
+    #       (forAttr config.services.github-nix-ci.orgRunners
+    #         (name: _: ageSecretConfigFor name)
+    #       ++
+    #       forAttr config.services.github-nix-ci.personalRunners
+    #         (name: cfg: ageSecretConfigFor cfg.output.user)
+    #       ));
 
 
     # User (Linux only)
