@@ -1,32 +1,37 @@
-top@{ pkgs, lib, config, ... }:
+top@{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   inherit (pkgs.stdenv) isLinux isDarwin;
   inherit (lib) types;
   inherit (config.networking) hostName;
 
-  host = builtins.toString
-    (lib.throwIfNot (hostName != null) "networking.hostName must be set" hostName);
+  host = builtins.toString (
+    lib.throwIfNot (hostName != null) "networking.hostName must be set" hostName
+  );
 
   # The list of systems that this host can build for.
   # cf. https://stackoverflow.com/q/78649070/55246
   supportedSystems =
     let
       extra-systems =
-        if lib.hasAttr "extra-platforms" config.nix.settings
-        then lib.strings.splitString " " config.nix.settings.extra-platforms
-        else [ ];
+        if lib.hasAttr "extra-platforms" config.nix.settings then
+          lib.strings.splitString " " config.nix.settings.extra-platforms
+        else
+          [ ];
       host-system = config.nixpkgs.hostPlatform.system;
     in
     lib.unique ([ host-system ] ++ extra-systems);
   for = lib.flip builtins.map;
   forAttr = lib.flip lib.mapAttrsToList;
   # For input n, return [1..n]
-  range =
-    lib.genList (i: i + 1);
+  range = lib.genList (i: i + 1);
   # Poor man's zero-padding for numbers upto 99.
-  paddedNum = n:
-    if n < 10 then "0${builtins.toString n}" else builtins.toString n;
+  paddedNum = n: if n < 10 then "0${builtins.toString n}" else builtins.toString n;
 
   # Labels for our runners (used to select them in workflows)
   #
@@ -46,7 +51,8 @@ let
         ln -s ${lib.getExe pkgs.gnutar} $out/bin/gtar
       '';
     in
-    with pkgs; [
+    with pkgs;
+    [
       # For nix builds
       nix
       nixci
@@ -71,6 +77,7 @@ let
     ephemeral = true;
     noDefaultLabels = true;
     extraPackages = extraPackages ++ config.services.github-nix-ci.runnerSettings.extraPackages;
+    inherit (config.services.github-nix-ci.runnerSettings) extraEnvironment;
   } // lib.optionalAttrs isLinux { inherit user group; };
   user = "github-runner";
   group = "github-runner";
@@ -99,6 +106,17 @@ in
               description = ''
                 Extra packages to be installed on all runners
               '';
+            };
+
+            extraEnvironment = lib.mkOption {
+              type = types.attrs;
+              description = ''
+                Extra environment variables to set on all runners
+              '';
+              example = {
+                GIT_CONFIG = "/path/to/git/config";
+              };
+              default = { };
             };
           };
 
